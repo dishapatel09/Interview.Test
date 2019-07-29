@@ -1,23 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GraduationTracker.Models;
+using GraduationTracker.Models.Enums;
+using GraduationTracker.Services;
+using System;
 
 namespace GraduationTracker
 {
-    public partial class GraduationTracker
-    {   
-        public Tuple<bool, STANDING>  HasGraduated(Diploma diploma, Student student)
+    public partial class GraduationTracker: IGraduationTracker
+    {
+        private IRequirementRepository RequirementRepository { get; set; }
+        public GraduationTracker()
         {
-            var credits = 0;
+            RequirementRepository = new RequirementRepository();
+        }
+        public Tuple<bool, Standing> HasGraduated(Diploma diploma, Student student)
+        {
+            int credits = 0;
             var average = 0;
-        
-            for(int i = 0; i < diploma.Requirements.Length; i++)
+
+            for (int i = 0; i < diploma.Requirements.Length; i++)
             {
-                for(int j = 0; j < student.Courses.Length; j++)
+                for (int j = 0; j < student.Courses.Length; j++)
                 {
-                    var requirement = Repository.GetRequirement(diploma.Requirements[i]);
+                    Requirement requirement = RequirementRepository.GetById(diploma.Requirements[i]);
 
                     for (int k = 0; k < requirement.Courses.Length; k++)
                     {
@@ -33,33 +37,39 @@ namespace GraduationTracker
                 }
             }
 
-            average = average / student.Courses.Length;
+            average /= student.Courses.Length;
 
-            var standing = STANDING.None;
-
-            if (average < 50)
-                standing = STANDING.Remedial;
-            else if (average < 80)
-                standing = STANDING.Average;
-            else if (average < 95)
-                standing = STANDING.MagnaCumLaude;
-            else
-                standing = STANDING.MagnaCumLaude;
+            Standing standing = GetStanding(average);
 
             switch (standing)
             {
-                case STANDING.Remedial:
-                    return new Tuple<bool, STANDING>(false, standing);
-                case STANDING.Average:
-                    return new Tuple<bool, STANDING>(true, standing);
-                case STANDING.SumaCumLaude:
-                    return new Tuple<bool, STANDING>(true, standing);
-                case STANDING.MagnaCumLaude:
-                    return new Tuple<bool, STANDING>(true, standing);
+                case Standing.Remedial:
+                    return new Tuple<bool, Standing>(false, standing);
+                case Standing.Average:
+                    return new Tuple<bool, Standing>(true, standing);
+                case Standing.SumaCumLaude:
+                    return new Tuple<bool, Standing>(true, standing);
+                case Standing.MagnaCumLaude:
+                    return new Tuple<bool, Standing>(true, standing);
 
                 default:
-                    return new Tuple<bool, STANDING>(false, standing);
-            } 
+                    return new Tuple<bool, Standing>(false, standing);
+            }
+        }
+
+        public Standing GetStanding(int average)
+        {
+            Standing standing;
+            if (average < 50)
+                standing = Standing.Remedial;
+            else if (average < 80)
+                standing = Standing.Average;
+            else if (average < 95)
+                standing = Standing.MagnaCumLaude;
+            else
+                standing = Standing.MagnaCumLaude;
+
+            return standing;
         }
     }
 }

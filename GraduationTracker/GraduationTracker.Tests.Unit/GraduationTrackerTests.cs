@@ -1,5 +1,8 @@
-﻿using System;
+﻿using GraduationTracker.Models;
+using GraduationTracker.Models.Enums;
+using GraduationTracker.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,81 +11,90 @@ namespace GraduationTracker.Tests.Unit
     [TestClass]
     public class GraduationTrackerTests
     {
+        private IGraduationTracker GraduationTracker { get; set; }
+        private IDiplomaRepository DiplomaRepository { get; set; }
+        private IStudentRepository StudentRepository { get; set; }
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            GraduationTracker = new GraduationTracker();
+            DiplomaRepository = new DiplomaRepository();
+            StudentRepository = new StudentRepository();
+        }
+
         [TestMethod]
         public void TestHasCredits()
         {
-            var tracker = new GraduationTracker();
+            Diploma diploma = new Diploma();
+            Student[] students = new Student[] { };
+            List<Tuple<bool, Standing>> graduated = new List<Tuple<bool, Standing>>();
+            int i = 1;
+            diploma = DiplomaRepository.GetById(i);
 
-            var diploma = new Diploma
-            {
-                Id = 1,
-                Credits = 4,
-                Requirements = new int[] { 100, 102, 103, 104 }
-            };
+            int[] ids = new int[] { 1, 2, 3 };
+            students = StudentRepository.All(ids).ToArray();
 
-            var students = new[]
+            foreach (Student student in students)
             {
-               new Student
-               {
-                   Id = 1,
-                   Courses = new Course[]
-                   {
-                        new Course{Id = 1, Name = "Math", Mark=95 },
-                        new Course{Id = 2, Name = "Science", Mark=95 },
-                        new Course{Id = 3, Name = "Literature", Mark=95 },
-                        new Course{Id = 4, Name = "Physichal Education", Mark=95 }
-                   }
-               },
-               new Student
-               {
-                   Id = 2,
-                   Courses = new Course[]
-                   {
-                        new Course{Id = 1, Name = "Math", Mark=80 },
-                        new Course{Id = 2, Name = "Science", Mark=80 },
-                        new Course{Id = 3, Name = "Literature", Mark=80 },
-                        new Course{Id = 4, Name = "Physichal Education", Mark=80 }
-                   }
-               },
-            new Student
-            {
-                Id = 3,
-                Courses = new Course[]
-                {
-                    new Course{Id = 1, Name = "Math", Mark=50 },
-                    new Course{Id = 2, Name = "Science", Mark=50 },
-                    new Course{Id = 3, Name = "Literature", Mark=50 },
-                    new Course{Id = 4, Name = "Physichal Education", Mark=50 }
-                }
-            },
-            new Student
-            {
-                Id = 4,
-                Courses = new Course[]
-                {
-                    new Course{Id = 1, Name = "Math", Mark=40 },
-                    new Course{Id = 2, Name = "Science", Mark=40 },
-                    new Course{Id = 3, Name = "Literature", Mark=40 },
-                    new Course{Id = 4, Name = "Physichal Education", Mark=40 }
-                }
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
             }
+            Assert.IsTrue(graduated.Any());
 
-
-            //tracker.HasGraduated()
-        };
-            
-            var graduated = new List<Tuple<bool, STANDING>>();
-
-            foreach(var student in students)
+            ids = new int[] { 4 };
+            students = StudentRepository.All(ids).ToArray();
+            foreach (Student student in students)
             {
-                graduated.Add(tracker.HasGraduated(diploma, student));      
+                graduated.Clear();
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
             }
+            Assert.IsFalse(graduated.Any(g => g.Item1 == true));
 
-            
-            Assert.IsFalse(graduated.Any());
-
+            ids = new int[] { 1, 4 };
+            students = StudentRepository.All(ids).ToArray();
+            foreach (Student student in students)
+            {
+                graduated.Clear();
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
+            }
+            Assert.IsTrue(graduated.Any());
         }
 
+        [TestMethod]
+        public void TestHasNoCredits()
+        {
+            Diploma diploma = new Diploma();
+            Student[] students = new Student[] { };
+            List<Tuple<bool, Standing>> graduated = new List<Tuple<bool, Standing>>();
+            int i = 1;
+            int[] ids = new int[] { 1, 2, 3 };
+            diploma = DiplomaRepository.GetById(i);
+            students = StudentRepository.All(ids).ToArray();
+
+            foreach (Student student in students)
+            {
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
+            }
+            Assert.IsFalse(graduated.All(g => g.Item1 == false));
+
+            ids = new int[] { 4 };
+            students = StudentRepository.All(ids).ToArray();
+            foreach (Student student in students)
+            {
+                graduated.Clear();
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
+            }
+            Assert.IsTrue(graduated.All(g => g.Item1 == false));
+
+            ids = new int[] { 1, 4 };
+            students = StudentRepository.All(ids).ToArray();
+            foreach (Student student in students)
+            {
+                graduated.Clear();
+                graduated.Add(GraduationTracker.HasGraduated(diploma, student));
+            }
+            Assert.IsFalse(graduated.All(g => g.Item1 == true));
+        }
 
     }
 }
