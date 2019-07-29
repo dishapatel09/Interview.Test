@@ -1,6 +1,6 @@
-﻿namespace GraduationTracker
+﻿namespace GraduationTracker.Models.Enums
 {
-    public enum STANDING
+    public enum Standing
     {
         None,
         SumaCumLaude,
